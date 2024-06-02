@@ -1,0 +1,21 @@
+en:
+  extension.translate.name: Translate
+  extension.translate.translate: translate [WORDS] to [LANGUAGE]
+  extension.translate.hello: hello
+  extension.translate.english: English
+  extension.translate.chinese.simplified: Chinese (Simplified)
+  extension.translate.chinese.traditional: Chinese (Traditional)
+  extension.translate.japanese: Japanese
+  extension.translate.languageOf: language of [WORDS]
+  extension.translate.language: language
+
+zh-Hans:
+  extension.translate.name: 翻译
+  extension.translate.translate: 将 [WORDS] 译为 [LANGUAGE]
+  extension.translate.hello: 你好
+  extension.translate.english: 英文
+  extension.translate.chinese.simplified: 简体中文
+  extension.translate.chinese.traditional: 繁体中文
+  extension.translate.japanese: 日文
+  extension.translate.languageOf: '[WORDS] 的语言'
+  extension.translate.language: 访客语言

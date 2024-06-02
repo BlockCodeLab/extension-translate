@@ -1,0 +1,27 @@
+{
+  "name": "@blockcode/extension-translate",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./blocks": {
+      "import": "./dist/blocks.js",
+      "require": "./dist/blocks.js"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "build": "bun-build",
+    "dev": "bun-build --watch ./src"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "bun-loader-yaml": "link:bun-loader-yaml"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0",
+    "@blockcode/ui": "workspace:*"
+  }
+}
