@@ -3,6 +3,7 @@ import Base64 from 'crypto-js/enc-base64';
 import { Text } from '@blockcode/ui';
 import translations from './l10n.yaml';
 import iconURI from './icon.png';
+import translatePyURI from './translate.py';
 
 // top-k=1, temperature=0.1
 // 问：把"晚上好，朋友！"翻译为日语。
@@ -48,7 +49,7 @@ function provideTranslateFunctionJs() {
   const language = provideLanguageFunctionJs.call(this);
   return this.provideFunction_('translate_translate', [
     `const ${this.FUNCTION_NAME_PLACEHOLDER_} = (content, language) => new Promise((resolve) => {`,
-    '  if (!runtime.wifiConnected || !content) {',
+    '  if (!content) {',
     `    return resolve('');`,
     '  }',
     `  const ws = new WebSocket(\`${getWebSocketUrl()}\`); `,
@@ -71,7 +72,7 @@ function provideTranslateFunctionJs() {
     '            text: [',
     '              {',
     `                role: 'user', `,
-    '                content: language ? `把"${content}"翻译为${ language } ` : `"${content}"是什么语言？`,',
+    '                content: language ? `把"${content}"翻译为${language}。` : `"${content}"是什么语言？`,',
     '              },',
     '            ],',
     '          },',
@@ -89,14 +90,16 @@ function provideTranslateFunctionJs() {
     '    if (data.header.status === 2) {',
     '      ws.close();',
     '      if (language) {',
-    '        const matches = message.match(/"[^"]*"/g);',
-    '        if (!matches) {',
-    `          message = message.slice(0, message.lastIndexedOf('('));`,
+    '        const matches = /("[^"]*"[^"“「]*)?["“「]([^"”」]*)["”」]/.exec(message);',
+    '        if (matches) {',
+    `          message = matches[2];`,
     '        } else {',
-    `          message = matches.pop().replaceAll('"', '');`,
+    `          let i = message.lastIndexOf('(');`,
+    `          i = i === -1 ?? message.lastIndexOf('（');`,
+    `          message = i === -1 ? message : message.slice(0, i);`,
     '        }',
     '      } else {',
-    '        if (message.match(/不是[^语]*[语文]/g)) {',
+    '        if (message.match(/不是[^语]*[语文]/)) {',
     `          return resolve(''); `,
     '        }',
     '        const matches = /是([^语]*[语文])/.exec(message);',
@@ -124,6 +127,13 @@ export default {
       defaultMessage="Translate"
     />
   ),
+  files: [
+    {
+      name: 'translate',
+      type: 'text/x-python',
+      uri: translatePyURI,
+    },
+  ],
   blocks: [
     {
       id: 'translate',
@@ -179,6 +189,13 @@ export default {
           ],
         },
       },
+      python(block) {
+        this.definitions_['translate_translate'] = `from extensions.translate import translate`;
+        const content = this.valueToCode(block, 'WORDS', this.ORDER_NONE) || '""';
+        const language = this.quote_(block.getFieldValue('LANGUAGE') || '英文');
+        const code = `(await translate.translate(${content}, ${language}))`;
+        return [code, this.ORDER_FUNCTION_CALL];
+      },
       vm(block) {
         const translate = provideTranslateFunctionJs.call(this);
         const content = this.valueToCode(block, 'WORDS', this.ORDER_NONE) || '""';
@@ -207,6 +224,12 @@ export default {
           ),
         },
       },
+      python(block) {
+        this.definitions_['translate_translate'] = `from extensions.translate import translate`;
+        const content = this.valueToCode(block, 'WORDS', this.ORDER_NONE) || '""';
+        const code = `(await translate.translate(${content}))`;
+        return [code, this.ORDER_FUNCTION_CALL];
+      },
       vm(block) {
         const translate = provideTranslateFunctionJs.call(this);
         const content = this.valueToCode(block, 'WORDS', this.ORDER_NONE) || '""';
@@ -223,6 +246,10 @@ export default {
         />
       ),
       output: 'string',
+      python() {
+        this.definitions_['translate_translate'] = `from extensions.translate import translate`;
+        return ['translate.language_name()', this.ORDER_FUNCTION_CALL];
+      },
       vm() {
         const language = provideLanguageFunctionJs.call(this);
         return [`${language}()`, this.ORDER_FUNCTION_CALL];
