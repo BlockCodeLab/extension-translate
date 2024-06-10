@@ -1,5 +1,8 @@
 en:
   extension.translate.name: Translate
+  extension.translate.openplatform: iFLYTEK Open Platform authorization
+  extension.translate.openplatform.description: >
+    Please register your own <a href="https://xinghuo.xfyun.cn/sparkapi">iFLYTEK Open Platform (Chinese)</a> account, the test account we provide does not guarantee that every request will be successful.
   extension.translate.translate: translate [WORDS] to [LANGUAGE]
   extension.translate.hello: hello
   extension.translate.english: English
@@ -11,6 +14,9 @@ en:
 
 zh-Hans:
   extension.translate.name: 翻译
+  extension.translate.openplatform: 讯飞开放平台认证信息
+  extension.translate.openplatform.description: >
+    请注册您自己的<a href="https://xinghuo.xfyun.cn/sparkapi">讯飞开放平台</a>账号，我们提供的测试账号不保证每次请求都成功。
   extension.translate.translate: 将 [WORDS] 译为 [LANGUAGE]
   extension.translate.hello: 你好
   extension.translate.english: 英文

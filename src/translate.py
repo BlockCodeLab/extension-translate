@@ -1,4 +1,4 @@
-from thread_worker import Thread_worker
+from micropython import const
 from scratch import runtime
 import websockets
 import ntptime
@@ -7,7 +7,6 @@ import base64
 import json
 import hmac
 import time
-import re
 
 SPARKAI_HOST = "spark-api.xf-yun.com"
 SPARKAI_PATHNAME = "/v1.1/chat"
@@ -15,6 +14,9 @@ SPARKAI_APP_ID = "db45f79e"
 SPARKAI_API_SECRET = "MWFiNjVmNDA4YjNhODFkZGE0MGQ1YWRj"
 SPARKAI_API_KEY = "6a3dfe79b9e9ec588ca65bf3b9d9c847"
 SPARKAI_DOMAIN = "general"
+SPARKAI_TEMPERATURE = const(0.1)  # 0.1 ~ 1
+SPARKAI_MAX_TOKENS = const(200)  # 1 token = 1.5 chinese or 0.8 english
+SPARKAI_TOP_K = const(1)  # 1 ~ 6
 
 LANGUAGES = {
     "en": ("English", "英语"),
@@ -112,7 +114,7 @@ def sender(data, result):
             break
 
 
-translate_worker = Thread_worker(sender)
+translate_worker = runtime.create_worker(sender)
 
 
 def dump_data(content, lang):
@@ -130,9 +132,9 @@ def dump_data(content, lang):
             "parameter": {
                 "chat": {
                     "domain": SPARKAI_DOMAIN,
-                    "temperature": 0.1,
-                    "max_tokens": 1024,
-                    "top_k": 1,
+                    "temperature": SPARKAI_TEMPERATURE,
+                    "max_tokens": SPARKAI_MAX_TOKENS,
+                    "top_k": SPARKAI_TOP_K,
                 }
             },
             "payload": {
@@ -148,7 +150,7 @@ def dump_data(content, lang):
 
 
 def language_name(i=0):
-    return LANGUAGES.get(runtime.language, LANGUAGES["zh-Hans"])[i]
+    return LANGUAGES.get(runtime.language, LANGUAGES["en"])[i]
 
 
 def _translate(message):
@@ -180,13 +182,11 @@ def _translate(message):
 
 
 async def translate(content, lang=None):
-    print(runtime.wifi_connected)
     if not runtime.wifi_connected or not content:
         return ""
 
     data = dump_data(content, lang)
     result = {"done": False, "message": ""}
-    print(data)
     translate_worker.start(data, result)
 
     while not result["done"]:
@@ -197,12 +197,8 @@ async def translate(content, lang=None):
     if not message:
         return ""
 
-    print(message)
     if lang:
         return _translate(result["message"])
-
-    NOT_LANGUAGE_RE = re.compile(r"不是[^语]*[语文]")
-    LANGUAGE_RE = re.compile(r"是([^语]*[语文])")
 
     if message.find("不是") != -1:
         message = "未知语言"
@@ -221,4 +217,5 @@ async def translate(content, lang=None):
 
     if runtime.language == "zh-Hans":
         return message
+
     return await translate(message, language_name(1))
