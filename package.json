@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "bun-types": "latest",
-    "bun-loader-yaml": "link:bun-loader-yaml"
+    "bun-loader-yaml": "github:kankungyip/bun-loader-yaml"
   },
   "dependencies": {
     "crypto-js": "^4.2.0",
