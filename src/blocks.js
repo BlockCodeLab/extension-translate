@@ -123,9 +123,12 @@ export default {
       },
       python(block) {
         this.definitions_['translate_translate'] = `from extensions.translate import translate`;
+        const apikey = localStorage.getItem(`brain.connection.apikey`);
+        const apisecret = localStorage.getItem(`brain.connection.apisecret`);
+        const useapi = apikey && apisecret ? `, key="${apikey}", secret="${apisecret}"` : '';
         const content = this.valueToCode(block, 'WORDS', this.ORDER_NONE) || '""';
         const language = this.quote_(block.getFieldValue('LANGUAGE') || '英文');
-        const code = `(await translate.translate(str(${content}), ${language}))`;
+        const code = `(await translate.translate(str(${content}), ${language} ${useapi}))`;
         return [code, this.ORDER_FUNCTION_CALL];
       },
       vm(block) {
@@ -158,8 +161,11 @@ export default {
       },
       python(block) {
         this.definitions_['translate_translate'] = `from extensions.translate import translate`;
+        const apikey = localStorage.getItem(`brain.connection.apikey`);
+        const apisecret = localStorage.getItem(`brain.connection.apisecret`);
+        const useapi = apikey && apisecret ? `, key="${apikey}", secret="${apisecret}"` : '';
         const content = this.valueToCode(block, 'WORDS', this.ORDER_NONE) || '""';
-        const code = `(await translate.translate(str(${content})))`;
+        const code = `(await translate.translate(str(${content}) ${useapi}))`;
         return [code, this.ORDER_FUNCTION_CALL];
       },
       vm(block) {
