@@ -88,7 +88,7 @@ export default {
         },
         LANGUAGE: {
           type: 'string',
-          default: 'english',
+          default: '英语',
           menu: [
             [
               <Text

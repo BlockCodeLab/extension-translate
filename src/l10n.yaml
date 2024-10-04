@@ -23,5 +23,5 @@ zh-Hans:
   extension.translate.chinese.simplified: 简体中文
   extension.translate.chinese.traditional: 繁体中文
   extension.translate.japanese: 日文
-  extension.translate.languageOf: '[WORDS] 的语言'
+  extension.translate.languageOf: 识别 [WORDS] 的语言
   extension.translate.language: 访客语言
