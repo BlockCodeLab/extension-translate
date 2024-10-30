@@ -7,7 +7,7 @@ export default {
   collaborator: 'iFLYTEK Spark',
   image: featureImage,
   icon: iconImage,
-  tags: ['blocks', 'data', 'internet', 'ai'],
+  tags: ['blocks', 'data', 'ai'],
   internetRequired: true,
 
   // l10n
