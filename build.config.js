@@ -16,5 +16,11 @@ export default {
   },
   minify: isRelease,
   plugins: [YamlLoader()],
-  external: ['preact', 'preact/hooks', `preact/jsx-${isRelease ? '' : 'dev-'}runtime`, '@blockcode/ui'],
+  external: [
+    'preact',
+    'preact/hooks',
+    `preact/jsx-${isRelease ? '' : 'dev-'}runtime`,
+    '@blockcode/ui',
+    '@blockcode/aisdks',
+  ],
 };

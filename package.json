@@ -21,7 +21,7 @@
     "bun-loader-yaml": "github:kankungyip/bun-loader-yaml"
   },
   "dependencies": {
-    "crypto-js": "^4.2.0",
-    "@blockcode/ui": "workspace:*"
+    "@blockcode/ui": "workspace:*",
+    "@blockcode/aisdks": "workspace:*"
   }
 }

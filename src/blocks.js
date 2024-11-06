@@ -1,27 +1,15 @@
-import hmacSHA256 from 'crypto-js/hmac-sha256';
-import Base64 from 'crypto-js/enc-base64';
+import '@blockcode/aisdks';
 import { Text } from '@blockcode/ui';
 import translations from './l10n.yaml';
 import iconURI from './icon.png';
 import translatePyURI from './translate.py';
 
-// top-k=1, temperature=0.1
 // 问：把"晚上好，朋友！"翻译为日语。
 // 答："晚上好，朋友！"的日语翻译是 "こんにちは、友達！"。
 // 问："こんにちは、友達！"是什么语言？
 // 答："こんにちは、友達！"是日语。
 // 问："23:09"是什么语言？
 // 答："23:09"不是任何已知的语言。
-
-const SPARKAI_HOST = 'spark-api.xf-yun.com';
-const SPARKAI_PATHNAME = '/v1.1/chat';
-const SPARKAI_APP_ID = 'db45f79e';
-const SPARKAI_API_SECRET = 'MWFiNjVmNDA4YjNhODFkZGE0MGQ1YWRj';
-const SPARKAI_API_KEY = '6a3dfe79b9e9ec588ca65bf3b9d9c847';
-const SPARKAI_DOMAIN = 'general';
-const SPARKAI_TEMPERATURE = 0.1; // 0.1 ~ 1
-const SPARKAI_MAX_TOKENS = 1024; // 1 token = 1.5 chinese or 0.8 english
-const SPARKAI_TOP_K = 1; // 1 ~ 6
 
 export default {
   iconURI,
@@ -38,32 +26,47 @@ export default {
       uri: translatePyURI,
     },
   ],
-  connectionConfig: {
+  statusButton: {
     title: (
       <Text
         id="extension.translate.openplatform"
         defaultMessage="iFLYTEK Open Platform authorization"
       />
     ),
-    items: [
+    storage: [
       {
-        id: 'appid',
+        id: 'sparkai.appid',
         text: 'APPID',
       },
       {
-        id: 'apisecret',
+        id: 'sparkai.apisecret',
         text: 'APISecret',
       },
       {
-        id: 'apikey',
+        id: 'sparkai.apikey',
         text: 'APIKey',
       },
     ],
     description: (
-      <Text
-        id="extension.translate.openplatform.description"
-        defaultMessage="Please register your own <a href='https://xinghuo.xfyun.cn/sparkapi'>iFLYTEK Open Platform (Chinese)</a> account, the test account we provide does not guarantee that every request will be successful."
-      />
+      <>
+        <Text
+          id="extension.translate.openplatform.description1"
+          defaultMessage="Please register your own "
+        />
+        <a
+          href="https://xinghuo.xfyun.cn/sparkapi"
+          target="_blank"
+        >
+          <Text
+            id="extension.translate.openplatform.description2"
+            defaultMessage="iFLYTEK Open Platform (Chinese)"
+          />
+        </a>
+        <Text
+          id="extension.translate.openplatform.description3"
+          defaultMessage=" account, the test account we provide does not guarantee that every request will be successful."
+        />
+      </>
     ),
   },
   blocks: [
@@ -123,8 +126,8 @@ export default {
       },
       python(block) {
         this.definitions_['translate_translate'] = `from extensions.translate import translate`;
-        const apikey = localStorage.getItem(`brain.connection.apikey`);
-        const apisecret = localStorage.getItem(`brain.connection.apisecret`);
+        const apikey = localStorage.getItem(`sparkai.apikey`);
+        const apisecret = localStorage.getItem(`sparkai.apisecret`);
         const useapi = apikey && apisecret ? `, key="${apikey}", secret="${apisecret}"` : '';
         const content = this.valueToCode(block, 'WORDS', this.ORDER_NONE) || '""';
         const language = this.quote_(block.getFieldValue('LANGUAGE') || '英文');
@@ -161,8 +164,8 @@ export default {
       },
       python(block) {
         this.definitions_['translate_translate'] = `from extensions.translate import translate`;
-        const apikey = localStorage.getItem(`brain.connection.apikey`);
-        const apisecret = localStorage.getItem(`brain.connection.apisecret`);
+        const apikey = localStorage.getItem(`sparkai.apikey`);
+        const apisecret = localStorage.getItem(`sparkai.apisecret`);
         const useapi = apikey && apisecret ? `, key="${apikey}", secret="${apisecret}"` : '';
         const content = this.valueToCode(block, 'WORDS', this.ORDER_NONE) || '""';
         const code = `(await translate.translate(str(${content}) ${useapi}))`;
@@ -197,20 +200,6 @@ export default {
   translations,
 };
 
-const getWebSocketUrl = () => {
-  const date = new Date().toGMTString();
-  const apisecret = localStorage.getItem(`brain.connection.apisecret`) || SPARKAI_API_SECRET;
-  const apikey = localStorage.getItem(`brain.connection.apikey`) || SPARKAI_API_KEY;
-
-  const signatureRaw = `host: ${SPARKAI_HOST}\ndate: ${date}\nGET ${SPARKAI_PATHNAME} HTTP/1.1`;
-  const signature = Base64.stringify(hmacSHA256(signatureRaw, apisecret));
-
-  const authorizationRaw = `api_key="${apikey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
-  const authorization = btoa(authorizationRaw);
-
-  return `wss://${SPARKAI_HOST}${SPARKAI_PATHNAME}?authorization=${authorization}&date=${date}&host=${SPARKAI_HOST}`;
-};
-
 function provideGetLanguageFunctionJs() {
   return this.provideFunction_('translate_language', [
     `const ${this.FUNCTION_NAME_PLACEHOLDER_} = (i = 0) => {`,
@@ -226,77 +215,33 @@ function provideGetLanguageFunctionJs() {
 
 function provideTranslateFunctionJs() {
   const getLanguage = provideGetLanguageFunctionJs.call(this);
-  const appid = localStorage.getItem(`brain.connection.appid`) || SPARKAI_APP_ID;
   return this.provideFunction_('translate_translate', [
-    `const ${this.FUNCTION_NAME_PLACEHOLDER_} = (content, language) => new Promise((resolve) => {`,
-    '  if (!content) {',
-    `    return resolve('');`,
+    `const ${this.FUNCTION_NAME_PLACEHOLDER_} = async (content, language) => {`,
+    `  if (!content) return '';`,
+    `  let message = await window.ai.askSpark([{`,
+    `    role: 'user', `,
+    '    content: language ? `把"${content}"翻译为${language}。` : `"${content}"是什么语言？`,',
+    `  }]);`,
+    '  if (language) {',
+    '    const matches = /("[^"]*"[^"“「]*)?["“「]([^"”」]*)["”」]/.exec(message);',
+    '    if (matches) {',
+    `      message = matches[2];`,
+    '    } else {',
+    `      let i = message.lastIndexOf('(');`,
+    `      i = i === -1 ?? message.lastIndexOf('（');`,
+    `      message = i === -1 ? message : message.slice(0, i);`,
+    '    }',
+    '  } else {',
+    `    if (message.match(/不是[^语]*[语文]/)) return '';`,
+    '    const matches = /是([^语]*[语文])/.exec(message);',
+    `    if (!matches) return '';`,
+    '    message = matches[1];',
+    `    if (runtime.language !== 'zh-Hans') {`,
+    `      language = ${getLanguage}(1);`,
+    `      message = await ${this.FUNCTION_NAME_PLACEHOLDER_}(message, language);`,
+    `    }`,
     '  }',
-    `  const ws = new WebSocket(\`${getWebSocketUrl()}\`); `,
-    '  ws.onopen = () => {',
-    '    ws.send(JSON.stringify({',
-    '      header: {',
-    `          app_id: '${appid}', `,
-    `          uid: '${appid}', `,
-    '        },',
-    '        parameter: {',
-    '          chat: {',
-    `            domain: '${SPARKAI_DOMAIN}', `,
-    `            temperature: ${SPARKAI_TEMPERATURE},`,
-    `            max_tokens: ${SPARKAI_MAX_TOKENS},`,
-    `            top_k: ${SPARKAI_TOP_K},`,
-    '          },',
-    '        },',
-    '        payload: {',
-    '          message: {',
-    '            text: [',
-    '              {',
-    `                role: 'user', `,
-    '                content: language ? `把"${content}"翻译为${language}。` : `"${content}"是什么语言？`,',
-    '              },',
-    '            ],',
-    '          },',
-    '        },',
-    '    }));',
-    '  };',
-    `  ws.onerror = (e) => resolve(''); `,
-    `  let message = ''; `,
-    '  ws.onmessage = async (e) => {',
-    '    if (!runtime.running) return;',
-    '    const data = JSON.parse(e.data);',
-    '    if (data.header.code !== 0) {',
-    `      return resolve(''); `,
-    '    }',
-    `    message += data.payload.choices.text.map((text) => text.content).join(''); `,
-    '    if (data.header.status === 2) {',
-    '      ws.close();',
-    '      message = message.trim();',
-    '      if (language) {',
-    '        const matches = /("[^"]*"[^"“「]*)?["“「]([^"”」]*)["”」]/.exec(message);',
-    '        if (matches) {',
-    `          message = matches[2];`,
-    '        } else {',
-    `          let i = message.lastIndexOf('(');`,
-    `          i = i === -1 ?? message.lastIndexOf('（');`,
-    `          message = i === -1 ? message : message.slice(0, i);`,
-    '        }',
-    '      } else {',
-    '        if (message.match(/不是[^语]*[语文]/)) {',
-    `          return resolve(''); `,
-    '        }',
-    '        const matches = /是([^语]*[语文])/.exec(message);',
-    '        if (!matches) {',
-    `          return resolve(''); `,
-    '        }',
-    '        message = matches[1];',
-    `        if (runtime.language !== 'zh-Hans') {`,
-    `          language = ${getLanguage}(1);`,
-    `          message = await ${this.FUNCTION_NAME_PLACEHOLDER_}(message, language);`,
-    `        }`,
-    '      }',
-    '      resolve(message);',
-    '    }',
-    '  };',
-    '});',
+    '  return message;',
+    '};',
   ]);
 }
